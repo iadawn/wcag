@@ -13,6 +13,7 @@ import { generateId } from "./common";
 import { getTermsMap } from "./guidelines";
 import { resolveTechniqueIdFromHref, understandingToTechniqueLinkSelector } from "./techniques";
 import { techniqueToUnderstandingLinkSelector } from "./understanding";
+import { AsyncLocalStorage } from "async_hooks";
 
 const titleSuffix = " | WAI | W3C";
 
@@ -307,6 +308,7 @@ export class CustomLiquid extends Liquid {
     } else {
       if (scope.isTechniques) {
         $("title").text(`${scope.technique.id}: ${scope.technique.title}${titleSuffix}`);
+        const techniqueTitleSelector = "h1";
         const aboutBoxSelector = "section#technique .box-i";
 
         // Strip applicability paragraphs with metadata IDs (e.g. H99)
@@ -359,12 +361,19 @@ export class CustomLiquid extends Liquid {
         $("section#applicability").remove();
 
         if (scope.technique.obsoleteSince && scope.technique.obsoleteSince <= scope.version) {
-          $(aboutBoxSelector).append(
+          // Add an message box with obsolete message
+          $(techniqueTitleSelector).after(
             "\n",
-            `<section class="obsolete"><h3>Obsolete</h3>${
+            `<section class="obsolete-message box"><h3 class="box-h">Obsolete</h3><div class="box-i">${
               scope.technique.obsoleteMessage || ""
-            }</section>`
+            }</div></section>`
           );
+
+          // Include an indication in the title that the technique is obsolete
+          $("title").text('Obsolete ' + $("title").text());
+
+          // Add class to page
+          $("body").addClass("obsolete");
         }
 
         // Remove any effectively-empty techniques/resources sections,
